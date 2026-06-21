@@ -1,0 +1,66 @@
+[
+  {
+    "message": "Ok. Me watching tv too.",
+    "true_label": "ham"
+  },
+  {
+    "message": "Get ready for  &lt;#&gt;  inches of pleasure...",
+    "true_label": "ham"
+  },
+  {
+    "message": "We can go 4 e normal pilates after our intro...  ",
+    "true_label": "ham"
+  },
+  {
+    "message": "Or better still can you catch her and let ask her if she can sell  &lt;#&gt;  for me.",
+    "true_label": "ham"
+  },
+  {
+    "message": "I'll be late...",
+    "true_label": "ham"
+  },
+  {
+    "message": "I'll probably be around mu a lot",
+    "true_label": "ham"
+  },
+  {
+    "message": "Mum say we wan to go then go... Then she can shun bian watch da glass exhibition... ",
+    "true_label": "ham"
+  },
+  {
+    "message": "HELLOGORGEOUS, HOWS U? MY FONE WAS ON CHARGE LST NITW WEN U TEXD ME. HOPEU AD A NICE WKEND AS IM SURE U DID LOOKIN 4WARD 2 C-IN U 2MRW LUV JAZ",
+    "true_label": "ham"
+  },
+  {
+    "message": "You have 1 new message. Please call 08715205273",
+    "true_label": "spam"
+  },
+  {
+    "message": "This is the 2nd attempt to contract U, you have won this weeks top prize of either \u00a31000 cash or \u00a3200 prize. Just call 09066361921",
+    "true_label": "spam"
+  },
+  {
+    "message": "Free msg: Single? Find a partner in your area! 1000s of real people are waiting to chat now!Send CHAT to 62220Cncl send STOPCS 08717890890\u00a31.50 per msg",
+    "true_label": "spam"
+  },
+  {
+    "message": "Congratulations ur awarded 500 of CD vouchers or 125gift guaranteed & Free entry 2 100 wkly draw txt MUSIC to 87066 TnCs www.Ldew.com1win150ppmx3age16",
+    "true_label": "spam"
+  },
+  {
+    "message": "Wanna have a laugh? Try CHIT-CHAT on your mobile now! Logon by txting the word: CHAT and send it to No: 8883 CM PO Box 4217 London W1A 6ZF 16+ 118p/msg rcvd",
+    "true_label": "spam"
+  },
+  {
+    "message": "Latest News! Police station toilet stolen, cops have nothing to go on!",
+    "true_label": "spam"
+  },
+  {
+    "message": "URGENT! Your Mobile number has been awarded with a \u00a32000 prize GUARANTEED. Call 09061790121 from land line. Claim 3030. Valid 12hrs only 150ppm",
+    "true_label": "spam"
+  },
+  {
+    "message": "WIN a year supply of CDs 4 a store of ur choice worth \u00a3500 & enter our \u00a3100 Weekly draw txt MUSIC to 87066 Ts&Cs www.Ldew.com.subs16+1win150ppmx3",
+    "true_label": "spam"
+  }
+]

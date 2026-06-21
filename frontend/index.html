@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMS Spam Detector</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --kraft: #EDE6D6;
+    --kraft-dark: #DDD2B8;
+    --ink: #2B2620;
+    --muted: #7A7163;
+    --faint: #A89E8B;
+    --line: #C9BCA0;
+    --ham: #3D5C3A;
+    --ham-bg: #E2E8DD;
+    --spam: #A33B2E;
+    --spam-bg: #F2E1DC;
+    --stamp-red: #B23A2E;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--kraft);
+    color: var(--ink);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, var(--kraft-dark) 39px, var(--kraft-dark) 40px);
+  }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  header {
+    padding: 28px 28px 18px;
+    border-bottom: 2px dashed var(--line);
+    background: var(--kraft);
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 6px 0 0;
+    letter-spacing: -0.01em;
+  }
+
+  .subline {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  #status-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-right: 6px;
+    background: var(--faint);
+  }
+  #status-dot.online { background: var(--ham); }
+  #status-dot.offline { background: var(--spam); }
+
+  .stamp {
+    border: 2px solid var(--stamp-red);
+    color: var(--stamp-red);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 6px 10px;
+    transform: rotate(4deg);
+    white-space: nowrap;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 760px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .panel { padding: 24px 28px; }
+  .panel.left { border-right: 2px dashed var(--line); }
+  @media (max-width: 760px) {
+    .panel.left { border-right: none; border-bottom: 2px dashed var(--line); }
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    background: #FFFFFFB0;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 12px;
+    resize: vertical;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--ink); }
+
+  .char-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--faint);
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  .btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    padding: 7px 14px;
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--ink); color: var(--kraft); }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+
+  .sample-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .sample-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    border: 1px solid var(--line);
+    padding: 4px 8px;
+    cursor: pointer;
+    background: #FFFFFF60;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sample-chip:hover { border-color: var(--ink); }
+  .sample-chip.ham-chip { color: var(--ham); }
+  .sample-chip.spam-chip { color: var(--spam); }
+
+  .result-card {
+    border: 1px solid var(--ink);
+    padding: 20px;
+    position: relative;
+    min-height: 140px;
+    transition: background 0.15s ease;
+  }
+
+  .result-card .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .verdict {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-top: 2px;
+    text-transform: uppercase;
+  }
+
+  .conf-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .prob-bar {
+    display: flex;
+    height: 8px;
+    margin-top: 16px;
+    border: 1px solid var(--ink);
+  }
+  .prob-bar > div { height: 100%; }
+
+  .prob-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .empty-state {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--faint);
+    text-align: center;
+    padding: 30px 10px;
+  }
+
+  .word-list {
+    margin-top: 18px;
+  }
+  .word-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+  .word-tag {
+    min-width: 90px;
+  }
+  .word-bar-track {
+    flex: 1;
+    height: 5px;
+    background: var(--kraft-dark);
+    position: relative;
+  }
+  .word-bar-fill {
+    height: 100%;
+    position: absolute;
+    top: 0;
+  }
+  .word-weight {
+    font-size: 9px;
+    color: var(--faint);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  table.matrix {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    margin-top: 12px;
+  }
+  table.matrix td { padding: 5px 8px; text-align: center; }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .metric-box {
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    background: #FFFFFF50;
+  }
+  .metric-box .mval {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .metric-box .mlabel {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  footer {
+    padding: 16px 28px;
+    border-top: 2px dashed var(--line);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--faint);
+  }
+
+  .error-banner {
+    margin: 0 28px;
+    padding: 10px 14px;
+    background: var(--spam-bg);
+    border: 1px solid var(--spam);
+    color: var(--spam);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    display: none;
+  }
+  .error-banner.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="error-banner" id="error-banner"></div>
+
+<header>
+  <div class="header-top">
+    <div>
+      <div class="eyebrow">QSKILL · AI/ML INTERNSHIP · TASK 02</div>
+      <h1>SMS Spam Detector</h1>
+      <div class="subline">
+        <span id="status-dot"></span><span id="status-text">connecting to api...</span>
+      </div>
+    </div>
+    <div class="stamp">INTERCEPTED</div>
+  </div>
+</header>
+
+<div class="grid">
+  <div class="panel left">
+    <div class="section-label">MESSAGE INTAKE</div>
+    <textarea id="message-input" placeholder="Paste or type an SMS message to classify..."></textarea>
+    <div class="char-count"><span id="char-count">0</span> / 2000</div>
+    <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+      <button class="btn" id="classify-btn">Classify message</button>
+      <button class="btn" id="clear-btn">Clear</button>
+    </div>
+
+    <div class="section-label" style="margin-top:24px;">TRY A REAL EXAMPLE</div>
+    <div class="sample-row" id="sample-row"></div>
+
+    <div class="section-label" style="margin-top:24px;">MODEL PERFORMANCE</div>
+    <div class="metric-grid" id="metric-grid"></div>
+    <button class="btn" id="toggle-matrix" style="margin-top:14px;">Show confusion matrix</button>
+    <div id="matrix-wrap" style="display:none;"></div>
+  </div>
+
+  <div class="panel">
+    <div class="section-label">CLASSIFICATION RESULT</div>
+    <div class="result-card" id="result-card">
+      <div class="empty-state" id="empty-state">Enter a message and classify it to see the result here.</div>
+      <div id="result-content" style="display:none;">
+        <div class="top">
+          <div>
+            <div class="eyebrow">VERDICT</div>
+            <div class="verdict" id="verdict-text">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="eyebrow">CONFIDENCE</div>
+            <div class="conf-value" id="conf-text">—</div>
+          </div>
+        </div>
+        <div class="prob-bar">
+          <div id="prob-ham" style="background: var(--ham);"></div>
+          <div id="prob-spam" style="background: var(--spam);"></div>
+        </div>
+        <div class="prob-labels">
+          <span id="prob-ham-label">ham —</span>
+          <span id="prob-spam-label">spam —</span>
+        </div>
+        <div class="word-list" id="word-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Dataset: UCI SMS Spam Collection (5,572 real messages: 4,825 ham / 747 spam, via justmarkham/pycon-2016-tutorial mirror) ·
+  TF-IDF + Logistic Regression served live from a Flask API · word weights are the model's actual learned coefficients.
+</footer>
+
+<script>
+const API_BASE = 'http://127.0.0.1:5001';
+
+let metadata = null;
+let samples = [];
+
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearError() {
+  document.getElementById('error-banner').classList.remove('show');
+}
+
+function setStatus(online, text) {
+  const dot = document.getElementById('status-dot');
+  dot.className = online ? 'online' : 'offline';
+  document.getElementById('status-text').textContent = text;
+}
+
+async function checkHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/api/health`);
+    if (!res.ok) throw new Error('bad status');
+    const data = await res.json();
+    setStatus(true, `api online · model: ${data.model} · test accuracy ${(data.test_accuracy * 100).toFixed(1)}%`);
+    return true;
+  } catch (e) {
+    setStatus(false, 'api offline — start the flask backend (python app.py) on port 5001');
+    showError('Cannot reach the backend at ' + API_BASE + '. Make sure the Flask server is running.');
+    return false;
+  }
+}
+
+async function loadMetadata() {
+  try {
+    const res = await fetch(`${API_BASE}/api/metadata`);
+    metadata = await res.json();
+    renderMetrics();
+    renderMatrix();
+  } catch (e) { console.error(e); }
+}
+
+async function loadSamples() {
+  try {
+    const res = await fetch(`${API_BASE}/api/samples`);
+    const data = await res.json();
+    samples = data.samples;
+    renderSamples();
+  } catch (e) { console.error(e); }
+}
+
+function renderMetrics() {
+  if (!metadata) return;
+  const used = metadata.model_used;
+  const r = metadata.results[used];
+  const grid = document.getElementById('metric-grid');
+  grid.innerHTML = `
+    <div class="metric-box"><div class="mval">${(r.accuracy * 100).toFixed(1)}%</div><div class="mlabel">accuracy</div></div>
+    <div class="metric-box"><div class="mval">${(r.precision * 100).toFixed(1)}%</div><div class="mlabel">precision</div></div>
+    <div class="metric-box"><div class="mval">${(r.recall * 100).toFixed(1)}%</div><div class="mlabel">recall</div></div>
+    <div class="metric-box"><div class="mval">${(r.f1 * 100).toFixed(1)}%</div><div class="mlabel">f1 score</div></div>
+  `;
+}
+
+function renderMatrix() {
+  if (!metadata) return;
+  const used = metadata.model_used;
+  const cm = metadata.results[used].confusion_matrix;
+  const labels = ['ham', 'spam'];
+  const colors = { ham: 'var(--ham)', spam: 'var(--spam)' };
+  let html = `<div class="eyebrow" style="margin-top:14px;">Test set (n=${metadata.test_size}) — rows: actual, cols: predicted</div>`;
+  html += '<table class="matrix"><thead><tr><td></td>';
+  labels.forEach(l => html += `<td style="color:${colors[l]}">${l}</td>`);
+  html += '</tr></thead><tbody>';
+  cm.forEach((row, i) => {
+    html += `<tr><td style="color:${colors[labels[i]]}">${labels[i]}</td>`;
+    row.forEach((c, j) => {
+      const bg = i === j ? 'rgba(43,38,32,0.07)' : (c > 0 ? 'rgba(163,59,46,0.1)' : 'transparent');
+      const weight = i === j ? '700' : '400';
+      html += `<td style="background:${bg};font-weight:${weight}">${c}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('matrix-wrap').innerHTML = html;
+}
+
+document.getElementById('toggle-matrix').addEventListener('click', (e) => {
+  const wrap = document.getElementById('matrix-wrap');
+  const visible = wrap.style.display !== 'none';
+  wrap.style.display = visible ? 'none' : 'block';
+  e.target.textContent = visible ? 'Show confusion matrix' : 'Hide confusion matrix';
+});
+
+function renderSamples() {
+  const row = document.getElementById('sample-row');
+  row.innerHTML = '';
+  // 3 ham + 3 spam
+  const ham = samples.filter(s => s.true_label === 'ham').slice(0, 3);
+  const spam = samples.filter(s => s.true_label === 'spam').slice(0, 3);
+  [...ham, ...spam].forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = `sample-chip ${s.true_label}-chip`;
+    chip.textContent = s.message;
+    chip.title = s.message;
+    chip.addEventListener('click', () => {
+      document.getElementById('message-input').value = s.message;
+      document.getElementById('char-count').textContent = s.message.length;
+      classify();
+    });
+    row.appendChild(chip);
+  });
+}
+
+document.getElementById('message-input').addEventListener('input', (e) => {
+  document.getElementById('char-count').textContent = e.target.value.length;
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  document.getElementById('message-input').value = '';
+  document.getElementById('char-count').textContent = '0';
+  document.getElementById('empty-state').style.display = 'block';
+  document.getElementById('result-content').style.display = 'none';
+  document.getElementById('result-card').style.background = 'transparent';
+  clearError();
+});
+
+document.getElementById('classify-btn').addEventListener('click', classify);
+
+async function classify() {
+  const message = document.getElementById('message-input').value;
+  if (!message.trim()) {
+    showError('Enter a message first.');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    if (!res.ok) {
+      const errData = await res.json();
+      showError('Error: ' + (errData.details ? errData.details.join('; ') : errData.error));
+      return;
+    }
+    clearError();
+    const data = await res.json();
+    renderResult(data);
+  } catch (e) {
+    showError('Could not reach prediction endpoint.');
+  }
+}
+
+function renderResult(data) {
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('result-content').style.display = 'block';
+
+  const isSpam = data.prediction === 'spam';
+  const card = document.getElementById('result-card');
+  card.style.background = isSpam ? 'var(--spam-bg)' : 'var(--ham-bg)';
+
+  const verdict = document.getElementById('verdict-text');
+  verdict.textContent = isSpam ? 'Spam' : 'Ham (not spam)';
+  verdict.style.color = isSpam ? 'var(--spam)' : 'var(--ham)';
+
+  document.getElementById('conf-text').textContent = `${Math.round(data.confidence * 100)}%`;
+
+  const hamPct = data.probabilities.ham * 100;
+  const spamPct = data.probabilities.spam * 100;
+  document.getElementById('prob-ham').style.width = hamPct + '%';
+  document.getElementById('prob-spam').style.width = spamPct + '%';
+  document.getElementById('prob-ham-label').textContent = `ham ${hamPct.toFixed(1)}%`;
+  document.getElementById('prob-spam-label').textContent = `spam ${spamPct.toFixed(1)}%`;
+
+  const wordList = document.getElementById('word-list');
+  if (data.flagged_words && data.flagged_words.length > 0) {
+    const maxAbs = Math.max(...data.flagged_words.map(w => Math.abs(w.weight)));
+    let html = '<div class="eyebrow" style="margin-bottom:8px;">WORDS THAT INFLUENCED THIS VERDICT</div>';
+    data.flagged_words.forEach(w => {
+      const pct = (Math.abs(w.weight) / maxAbs) * 100;
+      const color = w.weight > 0 ? 'var(--spam)' : 'var(--ham)';
+      const side = w.weight > 0 ? 'right' : 'left';
+      html += `
+        <div class="word-row">
+          <span class="word-tag">${w.word}</span>
+          <div class="word-bar-track">
+            <div class="word-bar-fill" style="width:${pct}%; background:${color}; ${side}:0;"></div>
+          </div>
+          <span class="word-weight">${w.weight > 0 ? '+' : ''}${w.weight.toFixed(2)}</span>
+        </div>`;
+    });
+    wordList.innerHTML = html;
+  } else {
+    wordList.innerHTML = '<div class="eyebrow">No vocabulary words from the training set matched this message.</div>';
+  }
+}
+
+async function init() {
+  const online = await checkHealth();
+  if (online) {
+    await loadMetadata();
+    await loadSamples();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
